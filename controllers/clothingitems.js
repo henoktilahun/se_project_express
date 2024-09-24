@@ -1,4 +1,5 @@
 const Clothingitem = require("../models/clothingitem")
+const { BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND } = require("../utils/errors")
 
 // GET /items — returns all clothing items
 const getClothingItem = (req, res) => {
@@ -6,7 +7,7 @@ const getClothingItem = (req, res) => {
     .then((items) => res.status(200).send(items))
     .catch((err) => {
       console.error(err);
-      return res.status(500).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
 
@@ -19,23 +20,35 @@ const createClothingItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "ValidationError") {
-        return res.status(400).send({ message: err.message });
+        return res.status(BAD_REQUEST).send({ message: err.message });
       }
-      return res.status(500).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
 
 // DELETE /items/:itemId — deletes an item by _id
 const deleteClothingItem = (req, res) => {
-  Clothingitem.findByIdAndDelete(req.user.id)
+  const { itemId } = req.params;
+  Clothingitem.findByIdAndDelete(itemId)
+    .orFail()
     .then((item) => res.status(200).send(item))
     .catch((err) => {
       console.error(err);
-      if (err.name === "ValidationError") {
-        return res.status(400).send({ message: err.message });
+      console.log(err.name);
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: err.message });
+      } else if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).send({ message: err.message });
       }
-      return res.status(500).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
+
+// PUT /items/:itemId/likes — like an item
+const likeClothingItem = (req, res) => {
+  const ownder = req.user._id
+}
+
+// DELETE /items/:itemId/likes — unlike an item
 
 module.exports = { getClothingItem, createClothingItem, deleteClothingItem }
