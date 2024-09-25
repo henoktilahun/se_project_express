@@ -1,7 +1,6 @@
 const User = require("../models/user");
 
-//GET /users
-
+// GET /users
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).send(users))
@@ -11,7 +10,7 @@ const getUsers = (req, res) => {
     });
 };
 
-//POST /user
+// POST /user
 const createUser = (req, res) => {
   const { name, avatar } = req.body;
   User.create({ name, avatar })
@@ -25,8 +24,7 @@ const createUser = (req, res) => {
     });
 };
 
-//GET /users/:id
-
+// GET /users/:id
 const getUser = (req, res) => {
   const { userId } = req.params;
   User.findById(userId)
@@ -36,7 +34,8 @@ const getUser = (req, res) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
         return res.status(404).send({ message: err.message });
-      } else if (err.name === "CastError") {
+      }
+      if (err.name === "CastError") {
         return res.status(400).send({ message: err.message });
       }
       return res.status(500).send({ message: err.message });

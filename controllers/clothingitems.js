@@ -41,7 +41,8 @@ const deleteClothingItem = (req, res) => {
       console.log(err.name);
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: err.message });
-      } else if (err.name === "CastError") {
+      }
+      if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: err.message });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
@@ -52,7 +53,7 @@ const deleteClothingItem = (req, res) => {
 const likeClothingItem = (req, res) => {
   const { itemId } = req.params;
   Clothingitem.findByIdAndUpdate(
-    req.params.itemId,
+    itemId,
     { $addToSet: { likes: req.user._id } },
     { new: true }
   )
@@ -63,7 +64,8 @@ const likeClothingItem = (req, res) => {
       console.log(err.name);
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: err.message });
-      } else if (err.name === "CastError") {
+      }
+      if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: err.message });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
@@ -74,7 +76,7 @@ const likeClothingItem = (req, res) => {
 const dislikeClothingItem = (req, res) => {
   const { itemId } = req.params;
   Clothingitem.findByIdAndUpdate(
-    req.params.itemId,
+    itemId,
     { $pull: { likes: req.user._id } }, // remove _id from the array
     { new: true }
   )
@@ -85,7 +87,8 @@ const dislikeClothingItem = (req, res) => {
       console.log(err.name);
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: err.message });
-      } else if (err.name === "CastError") {
+      }
+      if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: err.message });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });

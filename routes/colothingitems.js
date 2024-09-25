@@ -7,7 +7,7 @@ const {
   dislikeClothingItem,
 } = require("../controllers/clothingitems");
 
-//router.get("/", () => console.log("GET users"));
+// router.get("/", () => console.log("GET users"));
 router.get("/", getClothingItem);
 router.post("/", createClothingItem);
 router.delete("/:itemId", deleteClothingItem);
