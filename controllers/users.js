@@ -3,6 +3,7 @@ const {
   BAD_REQUEST,
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
+  CONFLICT,
 } = require("../utils/errors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -30,7 +31,7 @@ const createUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.code === 11000) {
-        return res.status(409).send({ message: "Email already exiasts" });
+        return res.status(CONFLICT).send({ message: "Email address already exists" });
       }
       if (err.name === "ValidationError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid data" });
