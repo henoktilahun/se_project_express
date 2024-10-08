@@ -4,6 +4,9 @@ const {
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
 } = require("../utils/errors");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const { JWT_SECRET } = require("../utils/config");
 
 // GET /users
 const getUsers = (req, res) => {
@@ -20,33 +23,40 @@ const getUsers = (req, res) => {
 // POST /user
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
-  User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        User.create({ name, avatar })
-          .then((user) => res.status(201).send(user))
-          .catch((err) => {
-            console.error(err);
-            if (err.name === "ValidationError") {
-              return res.status(BAD_REQUEST).send({ message: "Invalid data" });
-            }
-            return res
-              .status(INTERNAL_SERVER_ERROR)
-              .send({ message: "An error has occurred on the server" });
-          });
-      }
-    })
+  bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({ name, avatar, email, password: hash }))
+    .then((user) =>
+      res
+        .status(201)
+        .send({ name: user.name, avatar: user.avatar, email: user.email })
+    )
     .catch((err) => {
-      res.status(401).send({ message: err.message });
+      console.error(err);
+      if (err.code === 11000) {
+        return res.status(409).send({ message: "Email already exiasts" });
+      }
+      if (err.name === "ValidationError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
 // GET /users/:id
 const getUser = (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user._id;
   User.findById(userId)
     .orFail()
-    .then((user) => res.send(user))
+    .then((user) => {
+      // const { _id, name, email, avatar } = user;
+      // console.log(avatar);
+      // console.log({ name });
+      // res.send({ _id, name, email, avatar });
+      res.status(200).send(user);
+    })
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
@@ -63,27 +73,55 @@ const getUser = (req, res) => {
 
 const loginUser = (req, res) => {
   const { email, password } = req.body;
-
-  User.findOne({ email })
+  return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        return Promise.reject(new Error("Incorrect email or password"));
-      }
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
 
-      return bcrypt.compare(password, user.password);
-    })
-    .then((matched) => {
-      if (!matched) {
-        // the hashes didn't match, rejecting the promise
-        return Promise.reject(new Error("Incorrect email or password"));
-      }
-
-      // authentication successful
-      res.send({ message: "Everything good!" });
+      res.send({ token });
     })
     .catch((err) => {
-      res.status(401).send({ message: err.message });
+      console.log(err.code);
+      if (
+        err.message === "Incorrect email or password" ||
+        err.message === "Illegal arguments: undefined, string"
+      ) {
+        return res
+          .status(BAD_REQUEST)
+          .send({ message: "Incorrect email or password" });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
-module.exports = { getUsers, createUser, getUser };
+const updateUser = (req, res) => {
+  const { name, avatar } = req.body;
+  const { userId } = req.params;
+  User.findByIdAndUpdate(
+    userId,
+    { name, avatar },
+    {
+      new: true,
+      runValidators: true,
+    }
+  )
+    .then((user) => {
+      if (!user) {
+        return res.status(NOT_FOUND).send({ message: err.message });
+      }
+      return res.send(user);
+    })
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
+    });
+};
+
+module.exports = { getUsers, createUser, getUser, loginUser, updateUser };
