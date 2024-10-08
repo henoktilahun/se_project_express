@@ -26,11 +26,7 @@ const createUser = (req, res) => {
   bcrypt
     .hash(password, 10)
     .then((hash) => User.create({ name, avatar, email, password: hash }))
-    .then((user) =>
-      res
-        .status(201)
-        .send({ name: user.name, avatar: user.avatar, email: user.email })
-    )
+    .then(() => res.status(201).send({ name, avatar, email }))
     .catch((err) => {
       console.error(err);
       if (err.code === 11000) {
@@ -50,13 +46,7 @@ const getUser = (req, res) => {
   const userId = req.user._id;
   User.findById(userId)
     .orFail()
-    .then((user) => {
-      // const { _id, name, email, avatar } = user;
-      // console.log(avatar);
-      // console.log({ name });
-      // res.send({ _id, name, email, avatar });
-      res.status(200).send(user);
-    })
+    .then((user) => res.status(200).send(user))
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
@@ -99,14 +89,11 @@ const loginUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const { name, avatar } = req.body;
-  const { userId } = req.params;
+  const userId = req.user._id;
   User.findByIdAndUpdate(
     userId,
     { name, avatar },
-    {
-      new: true,
-      runValidators: true,
-    }
+    { new: true, runValidators: true }
   )
     .then((user) => {
       if (!user) {
