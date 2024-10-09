@@ -6,20 +6,9 @@ const {
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
   CONFLICT,
+  UNAUTHORIZED
 } = require("../utils/errors");
 const { JWT_SECRET } = require("../utils/config");
-
-// GET /users
-const getUsers = (req, res) => {
-  User.find({})
-    .then((users) => res.send(users))
-    .catch((err) => {
-      console.error(err);
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
-    });
-};
 
 // POST /user
 const createUser = (req, res) => {
@@ -47,7 +36,7 @@ const getUser = (req, res) => {
   const userId = req.user._id;
   User.findById(userId)
     .orFail()
-    .then((user) => res.status(200).send(user))
+    .then((user) => res.send(user))
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
@@ -64,6 +53,9 @@ const getUser = (req, res) => {
 
 const loginUser = (req, res) => {
   const { email, password } = req.body;
+  if (!email) {
+    return res.status(BAD_REQUEST).send({ message: 'Email is required' });
+  }
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
@@ -73,13 +65,15 @@ const loginUser = (req, res) => {
       res.send({ token });
     })
     .catch((err) => {
-      console.log(err.code);
-      if (
-        err.message === "Incorrect email or password" ||
-        err.message === "Illegal arguments: undefined, string"
-      ) {
+      console.error(err);
+      if (err.message === "Illegal arguments: undefined, string") {
         return res
           .status(BAD_REQUEST)
+          .send({ message: err.message });
+      }
+      if (err.message === "Incorrect email or password") {
+        return res
+          .status(UNAUTHORIZED)
           .send({ message: "Incorrect email or password" });
       }
       return res
@@ -112,4 +106,4 @@ const updateUser = (req, res) => {
     });
 };
 
-module.exports = { getUsers, createUser, getUser, loginUser, updateUser };
+module.exports = { createUser, getUser, loginUser, updateUser };
