@@ -12,7 +12,8 @@ router.post("/signup", createUser);
 
 router.use(auth);
 router.use("/users", userRouter);
+router.use(cors());
 
 router.use((req, res) => res.status(NOT_FOUND).send({ message: "Not Found" }));
-router.use(cors());
+// router.use(cors());
 module.exports = router;
