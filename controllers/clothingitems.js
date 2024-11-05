@@ -3,6 +3,7 @@ const {
   BAD_REQUEST,
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
+  FORBIDDEN,
 } = require("../utils/errors");
 
 // GET /items — returns all clothing items
@@ -38,10 +39,19 @@ const createClothingItem = (req, res) => {
 // DELETE /items/:itemId — deletes an item by _id
 const deleteClothingItem = (req, res) => {
   const { itemId } = req.params;
-  //const userId = req.user._id;
-  Clothingitem.findByIdAndDelete(itemId)
+  const userId = req.user._id;
+  Clothingitem.findById(itemId)
     .orFail()
-    .then((item) => res.send(item))
+    .then((item) => {
+      const ownderId = item.owner.toString();
+
+      if (userId !== ownderId) {
+        return res.status(FORBIDDEN).send({message: "Insufficient Permissions"})
+      }
+      return Clothingitem.findByIdAndDelete(itemId)
+      .orFail()
+      .then(() => res.send(item))
+    })
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
