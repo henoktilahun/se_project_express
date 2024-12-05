@@ -9,9 +9,10 @@ const {
   UNAUTHORIZED
 } = require("../utils/errors");
 const { JWT_SECRET } = require("../utils/config");
+const {InternalServerError, NotFoundError, BadRequestError, UnauthorizedError, ForbiddenError, ConflictError} = require("../middlewares/error-handler")
 
 // POST /user
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, avatar, email, password } = req.body;
   bcrypt
     .hash(password, 10)
@@ -20,19 +21,22 @@ const createUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.code === 11000) {
-        return res.status(CONFLICT).send({ message: "Email address already exists" });
+        //return res.status(CONFLICT).send({ message: "Email address already exists" });
+        return next(new ConflictError("Email address already exists"));
       }
       if (err.name === "ValidationError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+        return next(new BadRequestError("Invalid data"));
+        //return res.status(BAD_REQUEST).send({ message: "Invalid data" });
       }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
+      return next(new InternalServerError('An error has occured on the server'))
+      // return res
+      //   .status(INTERNAL_SERVER_ERROR)
+      //   .send({ message: "An error has occurred on the server" });
     });
 };
 
 // GET /users/:id
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   const userId = req.user._id;
   User.findById(userId)
     .orFail()
@@ -40,21 +44,25 @@ const getUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: err.message });
+        return next(new NotFoundError(err.message));
+        //return res.status(NOT_FOUND).send({ message: err.message });
       }
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+        return next(new BadRequestError("Invalid data"));
+        //return res.status(BAD_REQUEST).send({ message: "Invalid data" });
       }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
+      return next(new InternalServerError('An error has occured on the server'))
+      // return res
+      //   .status(INTERNAL_SERVER_ERROR)
+      //   .send({ message: "An error has occurred on the server" });
     });
 };
 
-const loginUser = (req, res) => {
+const loginUser = (req, res, next) => {
   const { email, password } = req.body;
   if (!email) {
-    return res.status(BAD_REQUEST).send({ message: 'Email is required' });
+    return next(new BadRequestError("Email is required"));
+    //return res.status(BAD_REQUEST).send({ message: 'Email is required' });
   }
   return User.findUserByCredentials(email, password)
     .then((user) => {
@@ -67,22 +75,25 @@ const loginUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "Illegal arguments: undefined, string") {
-        return res
-          .status(BAD_REQUEST)
-          .send({ message: err.message });
+        return next(new BadRequestError(err.message));
+        // return res
+        //   .status(BAD_REQUEST)
+        //   .send({ message: err.message });
       }
       if (err.message === "Incorrect email or password") {
-        return res
-          .status(UNAUTHORIZED)
-          .send({ message: "Incorrect email or password" });
+        return next(new UnauthorizedError("Incorrect email or password"));
+        // return res
+        //   .status(UNAUTHORIZED)
+        //   .send({ message: "Incorrect email or password" });
       }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
+      return next(new InternalServerError('An error has occured on the server'))
+      // return res
+      //   .status(INTERNAL_SERVER_ERROR)
+      //   .send({ message: "An error has occurred on the server" });
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const { name, avatar } = req.body;
   const userId = req.user._id;
   User.findByIdAndUpdate(
@@ -92,17 +103,20 @@ const updateUser = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res.status(NOT_FOUND).send({ message: "Not Found" });
+        return next(new NotFoundError("Not Found"));
+        //return res.status(NOT_FOUND).send({ message: "Not Found" });
       }
       return res.send(user);
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+        return next(new BadRequestError("Invalid data"))
+        //return res.status(BAD_REQUEST).send({ message: "Invalid data" });
       }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
+      return next(new InternalServerError("An error has occurred on the server"))
+      // return res
+      //   .status(INTERNAL_SERVER_ERROR)
+      //   .send({ message: "An error has occurred on the server" });
     });
 };
 
