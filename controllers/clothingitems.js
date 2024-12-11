@@ -1,11 +1,8 @@
 const Clothingitem = require("../models/clothingitem");
-const {
-  BAD_REQUEST,
-  INTERNAL_SERVER_ERROR,
-  NOT_FOUND,
-  FORBIDDEN,
-} = require("../utils/errors");
-const {InternalServerError, NotFoundError, BadRequestError, UnauthorizedError, ForbiddenError, ConflictError} = require("../middlewares/error-handler")
+const InternalServerError = require("../errors/internal-server");
+const NotFoundError = require("../errors/not-found");
+const BadRequestError = require("../errors/bad-request");
+const ForbiddenError = require("../errors/forbidden");
 
 // GET /items — returns all clothing items
 const getClothingItem = (req, res, next) => {
@@ -13,10 +10,9 @@ const getClothingItem = (req, res, next) => {
     .then((items) => res.send(items))
     .catch((err) => {
       console.error(err);
-      return next(new InternalServerError('An error has occured on the server'))
-      // return res
-      //   .status(INTERNAL_SERVER_ERROR)
-      //   .send({ message: "An error has occurred on the server" });
+      return next(
+        new InternalServerError("An error has occured on the server")
+      );
     });
 };
 
@@ -31,12 +27,10 @@ const createClothingItem = (req, res, next) => {
       console.error(err);
       if (err.name === "ValidationError") {
         return next(new BadRequestError("Invalid data"));
-        //return res.status(BAD_REQUEST).send({ message: "Invalid data" });
       }
-      return next(new InternalServerError('An error has occured on the server'))
-      // return res
-      //   .status(INTERNAL_SERVER_ERROR)
-      //   .send({ message: "An error has occurred on the server" });
+      return next(
+        new InternalServerError("An error has occured on the server")
+      );
     });
 };
 
@@ -50,27 +44,23 @@ const deleteClothingItem = (req, res, next) => {
       const ownderId = item.owner.toString();
 
       if (userId !== ownderId) {
-        return next(ForbiddenError("Insufficient Permissions"))
-        //return res.status(FORBIDDEN).send({message: "Insufficient Permissions"})
+        return next(new ForbiddenError("Insufficient Permissions"));
       }
       return Clothingitem.findByIdAndDelete(itemId)
-      .orFail()
-      .then(() => res.send(item))
+        .orFail()
+        .then(() => res.send(item));
     })
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
-        return next(new NotFoundError(err.message))
-        //return res.status(NOT_FOUND).send({ message: err.message });
+        return next(new NotFoundError(err.message));
       }
       if (err.name === "CastError") {
         return next(new BadRequestError("Invalid data"));
-        // return res.status(BAD_REQUEST).send({ message: "Invalid data" });
       }
-      return next(new InternalServerError('An error has occured on the server'))
-      // return res
-      //   .status(INTERNAL_SERVER_ERROR)
-      //   .send({ message: "An error has occurred on the server" });
+      return next(
+        new InternalServerError("An error has occured on the server")
+      );
     });
 };
 
@@ -88,17 +78,14 @@ const likeClothingItem = (req, res, next) => {
       console.error(err);
       console.log(err.name);
       if (err.name === "DocumentNotFoundError") {
-        return next(new NotFoundError(err.message))
-        //return res.status(NOT_FOUND).send({ message: err.message });
+        return next(new NotFoundError(err.message));
       }
       if (err.name === "CastError") {
-        return next(new BadRequestError("Invalid data"))
-        //return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+        return next(new BadRequestError("Invalid data"));
       }
-      return next(new InternalServerError('An error has occured on the server'))
-      // return res
-      //   .status(INTERNAL_SERVER_ERROR)
-      //   .send({ message: "An error has occurred on the server" });
+      return next(
+        new InternalServerError("An error has occured on the server")
+      );
     });
 };
 
@@ -116,17 +103,14 @@ const dislikeClothingItem = (req, res, next) => {
       console.error(err);
       console.log(err.name);
       if (err.name === "DocumentNotFoundError") {
-        return next(new NotFoundError(err.message))
-        //return res.status(NOT_FOUND).send({ message: err.message });
+        return next(new NotFoundError(err.message));
       }
       if (err.name === "CastError") {
-        return next(new BadRequestError("Invalid data"))
-        //return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+        return next(new BadRequestError("Invalid data"));
       }
-      return next(new InternalServerError('An error has occured on the server'))
-      // return res
-      //   .status(INTERNAL_SERVER_ERROR)
-      //   .send({ message: "An error has occurred on the server" });
+      return next(
+        new InternalServerError("An error has occured on the server")
+      );
     });
 };
 

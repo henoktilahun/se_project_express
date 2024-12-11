@@ -3,17 +3,22 @@ const helmet = require("helmet");
 const router = require("express").Router();
 const userRouter = require("./users");
 const itemRouter = require("./colothingitems");
-const { NOT_FOUND } = require("../utils/errors");
 const { loginUser, createUser } = require("../controllers/users");
+const {
+  validateUser,
+  validateUserLogin,
+} = require("../middlewares/validation");
+const NotFoundError = require("../errors/not-found");
 
 router.use(cors());
 router.use(helmet());
 router.use("/items", itemRouter);
-router.post("/signin", loginUser);
-router.post("/signup", createUser);
+router.post("/signin", validateUserLogin, loginUser);
+router.post("/signup", validateUser, createUser);
 router.use("/users", userRouter);
 
-router.use((req, res) => res.status(NOT_FOUND).send({ message: "Not Found" }));
-// router.use(cors());
+router.use((req, res, next) => {
+  next(new NotFoundError("Not Found"));
+});
 
 module.exports = router;
